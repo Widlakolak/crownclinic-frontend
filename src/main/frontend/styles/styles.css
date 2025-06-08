@@ -1,0 +1,67 @@
+.drawer-login {
+    background-image: url('../images/drawer-bg.png');
+    background-size: cover;
+    padding: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+	flex-direction: column;
+    text-align: center;
+}
+
+.doctor-view,
+.reception-view {
+    padding: 20px;
+    background-color: #fdfaf3;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.tabs {
+    background-color: #fafafa;
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+
+.tab-selected {
+    font-weight: bold;
+    border-bottom: 2px solid #0066cc;
+}
+
+.base-tabbed-view {
+    background-color: #f8f8f8;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.calendar-component button {
+    margin: 0 4px;
+    background-color: #e7e7e7;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.calendar-component button:hover {
+    background-color: #d0d0d0;
+}
+
+.calendar-component button.active {
+    background-color: #0066cc;
+    color: white;
+	font-weight: bold;
+    border-radius: 4px;
+}
+
+.calendar-view {
+    margin-top: 15px;
+    background-color: #fffdf7;
+    padding: 10px;
+    border: 1px solid #ccc;
+}
+
+body {
+    font-family: system-ui, sans-serif;
+    font-size: 16px;
+}
