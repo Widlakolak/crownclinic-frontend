@@ -1,36 +1,45 @@
 package com.crown.clinics.view;
 
 import com.crown.clinics.service.AuthService;
+import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import jakarta.annotation.security.PermitAll;
-import org.springframework.web.reactive.function.client.WebClient;
+import com.vaadin.flow.server.PWA;
+import com.vaadin.flow.component.page.Push;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
 
 @Route("profile")
 @PageTitle("Profile")
-@PermitAll
+@AnonymousAllowed
 public class ProfileCheckView extends VerticalLayout {
 
-    private final TextField firstName = new TextField("Imię");
-    private final TextField lastName = new TextField("Nazwisko");
-    private final EmailField email = new EmailField("E-mail");
-    private final TextField phone = new TextField("Telefon");
-    private final Button saveButton = new Button("Zapisz dane");
-
     private final AuthService authService;
+    private final TextField    firstName  = new TextField("Imię");
+    private final TextField    lastName   = new TextField("Nazwisko");
+    private final EmailField   email      = new EmailField("E-mail");
+    private final TextField    phone      = new TextField("Telefon");
+    private final Button       saveButton = new Button("Zapisz dane");
+    private final ProgressBar  loadingBar = new ProgressBar();
+
+    private UI ui;
     private AuthService.UserDto currentUser;
 
     public ProfileCheckView(AuthService authService) {
         this.authService = authService;
+        configureLayout();
+        configureForm();
+    }
 
+    private void configureLayout() {
         setSizeFull();
         setAlignItems(Alignment.CENTER);
         setJustifyContentMode(JustifyContentMode.CENTER);
@@ -40,61 +49,82 @@ public class ProfileCheckView extends VerticalLayout {
         header.getStyle()
                 .set("font-family", "'Courier New', monospace")
                 .set("color", "#444");
-
-        FormLayout form = new FormLayout(firstName, lastName, email, phone);
-        form.setResponsiveSteps(
-                new FormLayout.ResponsiveStep("0", 1),
-                new FormLayout.ResponsiveStep("400px", 2)
-        );
-
-        saveButton.addClickListener(e -> saveUserData());
-
-        add(header, form, saveButton);
-
-        loadUserData();
+        add(header);
     }
 
-    private void loadUserData() {
-        authService.fetchCurrentUser().subscribe(user -> {
-            this.currentUser = user;
-            getUI().ifPresent(ui -> ui.access(() -> {
-                firstName.setValue(user.firstName() != null ? user.firstName() : "");
-                lastName.setValue(user.lastName() != null ? user.lastName() : "");
-                email.setValue(user.email() != null ? user.email() : "");
-                phone.setValue(user.phone() != null ? user.phone() : "");
-            }));
-        });
+    private void configureForm() {
+        // FormLayout z int responsive step
+        FormLayout form = new FormLayout(firstName, lastName, email, phone);
+        form.setResponsiveSteps(
+                new FormLayout.ResponsiveStep("0",   1),
+                new FormLayout.ResponsiveStep("400px",2)
+        );
+
+        // przycisk i pasek ładowania
+        saveButton.addClickListener(e -> saveUserData());
+        loadingBar.setIndeterminate(true);
+        loadingBar.setVisible(false);
+
+        add(form, saveButton, loadingBar);
+    }
+
+    @Override
+    protected void onAttach(AttachEvent attachEvent) {
+        super.onAttach(attachEvent);
+        this.ui = attachEvent.getUI();
+
+        authService.initLogin(ui);
+
+        authService.fetchCurrentUser().subscribe(
+                user -> {
+                    this.currentUser = user;
+                    ui.access(() -> {
+                        firstName.setValue(nullToEmpty(user.firstName()));
+                        lastName .setValue(nullToEmpty(user.lastName()));
+                        email    .setValue(nullToEmpty(user.email()));
+                        phone    .setValue(nullToEmpty(user.phone()));
+                    });
+                },
+                err -> ui.access(() ->
+                        Notification.show("Nie udało się pobrać profilu: " + err.getMessage())
+                )
+        );
     }
 
     private void saveUserData() {
-        WebClient client = authService.authenticatedClient();
-        client.put()
-                .uri("/users/" + currentUser.id())
-                .bodyValue(new AuthService.UserDto(
-                        currentUser.id(),
-                        firstName.getValue(),
-                        lastName.getValue(),
-                        email.getValue(),
-                        phone.getValue(),
-                        currentUser.googleCalendarId(),
-                        currentUser.role()
-                ))
-                .retrieve()
-                .toBodilessEntity()
-                .subscribe(
-                        response -> {
-                            Notification.show("Zapisano dane profilu");
-                            UI.getCurrent().navigate(getTargetRoute(currentUser.role()));
-                        },
-                        error -> Notification.show("Nie udało się zapisać danych")
-                );
+        // blokada UI
+        saveButton.setEnabled(false);
+        saveButton.setText("Zapisywanie...");
+        loadingBar.setVisible(true);
+
+        var dto = new AuthService.UserDto(
+                currentUser.id(),
+                firstName.getValue(),
+                lastName.getValue(),
+                email.getValue(),
+                phone.getValue(),
+                currentUser.googleCalendarId(),
+                currentUser.role()
+        );
+
+        authService.updateProfilePartial(
+                dto,
+                () -> ui.access(() -> {
+                    Notification.show("Zapisano dane profilu");
+                    loadingBar.setVisible(false);
+                }),
+                user -> ui.access(() ->
+                        authService.navigateAfterLogin(ui, user)),
+                err -> ui.access(() -> {
+                    Notification.show("Błąd zapisu: " + err.getMessage());
+                    saveButton.setEnabled(true);
+                    saveButton.setText("Zapisz dane");
+                    loadingBar.setVisible(false);
+                })
+        );
     }
 
-    private String getTargetRoute(String role) {
-        return switch (role) {
-            case "DOCTOR" -> "doctor";
-            case "RECEPTIONIST" -> "reception";
-            default -> "login";
-        };
+    private String nullToEmpty(String s) {
+        return s == null ? "" : s;
     }
 }
