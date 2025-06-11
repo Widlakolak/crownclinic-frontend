@@ -1,5 +1,6 @@
 package com.crown.clinics.component;
 
+import com.crown.clinics.dto.WeatherDto;
 import com.crown.clinics.service.WeatherRestService;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
@@ -39,7 +40,7 @@ public class WeatherWidget extends HorizontalLayout {
         );
     }
 
-    private void updateWeatherUI(WeatherRestService.WeatherDto weather) {
+    private void updateWeatherUI(WeatherDto weather) {
         temperatureSpan.setText(Math.round(weather.temperature()) + "°C");
         iconImage.setSrc("https://openweathermap.org/img/wn/" + weather.icon() + "@2x.png");
         iconImage.setAlt(weather.description());

@@ -1,5 +1,6 @@
 package com.crown.clinics.view;
 
+import com.crown.clinics.dto.UserResponseDto;
 import com.crown.clinics.service.AuthService;
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.UI;
@@ -13,8 +14,6 @@ import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.PWA;
-import com.vaadin.flow.component.page.Push;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 
 @Route("profile")
@@ -31,7 +30,7 @@ public class ProfileCheckView extends VerticalLayout {
     private final ProgressBar  loadingBar = new ProgressBar();
 
     private UI ui;
-    private AuthService.UserDto currentUser;
+    private UserResponseDto currentUser;
 
     public ProfileCheckView(AuthService authService) {
         this.authService = authService;
@@ -97,7 +96,7 @@ public class ProfileCheckView extends VerticalLayout {
         saveButton.setText("Zapisywanie...");
         loadingBar.setVisible(true);
 
-        var dto = new AuthService.UserDto(
+        var dto = new UserResponseDto(
                 currentUser.id(),
                 firstName.getValue(),
                 lastName.getValue(),

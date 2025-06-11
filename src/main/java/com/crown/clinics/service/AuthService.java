@@ -1,5 +1,6 @@
 package com.crown.clinics.service;
 
+import com.crown.clinics.dto.UserResponseDto;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.server.VaadinSession;
 import org.springframework.stereotype.Service;
@@ -14,7 +15,7 @@ import java.util.function.Consumer;
 public class AuthService {
 
     private static final String TOKEN_KEY = "auth-token";
-    private String currentToken; // dodatkowe pole do przechowywania tokenu
+    private String currentToken;
     private final WebClient webClient = WebClient.create("http://localhost:8080/api");
 
     /**
@@ -52,9 +53,9 @@ public class AuthService {
                 );
     }
 
-    public void updateProfilePartial(UserDto dto,
+    public void updateProfilePartial(UserResponseDto dto,
                                      Runnable onSuccessNoNav,
-                                     Consumer<UserDto> onSuccessWithNav,
+                                     Consumer<UserResponseDto> onSuccessWithNav,
                                      Consumer<Throwable> onError) {
 
         Map<String,Object> updates = Map.of(
@@ -107,10 +108,10 @@ public class AuthService {
                 .build();
     }
 
-    public Mono<UserDto> fetchCurrentUser() {
+    public Mono<UserResponseDto> fetchCurrentUser() {
         return webClient.get().uri("/users/me")
                 .headers(h -> h.setBearerAuth(getToken()))
-                .retrieve().bodyToMono(UserDto.class);
+                .retrieve().bodyToMono(UserResponseDto.class);
     }
 
     public void logout(UI ui) {
@@ -123,7 +124,7 @@ public class AuthService {
         ui.navigate("login");
     }
 
-    public void navigateAfterLogin(UI ui, UserDto user) {
+    public void navigateAfterLogin(UI ui, UserResponseDto user) {
         if (user.firstName() == null || user.lastName() == null || user.phone() == null) {
             ui.navigate("profile");
         } else {
@@ -144,8 +145,4 @@ public class AuthService {
 
     public record LoginRequest(String username, String password) {}
     public record TokenResponse(String token) {}
-    public record UserDto(
-            Long id, String firstName, String lastName,
-            String email, String phone, String googleCalendarId, String role
-    ) {}
 }

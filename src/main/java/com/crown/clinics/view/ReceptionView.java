@@ -1,6 +1,5 @@
 package com.crown.clinics.view;
 
-import com.crown.clinics.component.AvailabilityEditor;
 import com.crown.clinics.component.CalendarComponent;
 import com.crown.clinics.component.WeatherWidget;
 import com.crown.clinics.service.AuthService;
@@ -45,11 +44,11 @@ public class ReceptionView extends BaseTabbedView {
             case "Wiadomości" -> contentArea.add(defaultTabContent("Wiadomości"));
             case "Tablice" -> contentArea.add(defaultTabContent("Tablice"));
             case "Pacjenci" -> {
-                AvailabilityEditor editor = new AvailabilityEditor();
-                VerticalLayout layout = new VerticalLayout(editor);
-                layout.setPadding(false);
-                layout.setSpacing(false);
-                contentArea.add(layout);
+//                AvailabilityEditor editor = new AvailabilityEditor();
+//                VerticalLayout layout = new VerticalLayout(editor);
+//                layout.setPadding(false);
+//                layout.setSpacing(false);
+//                contentArea.add(layout);
             }
             default -> contentArea.add(new Span("Nieznana zakładka"));
         }

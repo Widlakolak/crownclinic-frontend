@@ -1,5 +1,6 @@
 package com.crown.clinics.service;
 
+import com.crown.clinics.dto.WeatherDto;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -20,10 +21,4 @@ public class WeatherRestService {
                 .bodyToMono(WeatherDto.class)
                 .doOnError(e -> System.err.println("Błąd pobierania pogody dla miasta " + city + ": " + e.getMessage()));
     }
-
-    public record WeatherDto(
-            Double temperature,
-            String description,
-            String icon
-    ) {}
 }
