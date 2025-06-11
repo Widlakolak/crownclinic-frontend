@@ -1,7 +1,9 @@
 package com.crown.clinics.view;
 
 import com.crown.clinics.component.CalendarComponent;
+import com.crown.clinics.component.WeatherWidget;
 import com.crown.clinics.service.AuthService;
+import com.crown.clinics.service.WeatherRestService;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.BeforeEnterEvent;
@@ -16,10 +18,12 @@ public class DoctorView extends BaseTabbedView {
     private final CalendarComponent calendarComponent = new CalendarComponent();
 
     private final AuthService authService;
+    private final WeatherWidget weatherWidget;
 
-    public DoctorView(AuthService authService) {
-        super("CrownClinic - Kartoteka", authService);
+    public DoctorView(AuthService authService, WeatherRestService weatherRestService) {
+        super("CrownClinic - Kartoteka", authService, weatherRestService);
         this.authService = authService;
+        this.weatherWidget = new WeatherWidget(weatherRestService);
         updateContent();
     }
 

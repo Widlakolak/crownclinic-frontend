@@ -2,7 +2,9 @@ package com.crown.clinics.view;
 
 import com.crown.clinics.component.AvailabilityEditor;
 import com.crown.clinics.component.CalendarComponent;
+import com.crown.clinics.component.WeatherWidget;
 import com.crown.clinics.service.AuthService;
+import com.crown.clinics.service.WeatherRestService;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
@@ -14,11 +16,12 @@ import com.vaadin.flow.router.Route;
 public class ReceptionView extends BaseTabbedView {
 
     private final AuthService authService;
+    private final WeatherWidget weatherWidget;
 
-
-    public ReceptionView(AuthService authService) {
-        super("CrownClinic - Recepcja", authService);
+    public ReceptionView(AuthService authService, WeatherRestService weatherRestService) {
+        super("CrownClinic - Recepcja", authService, weatherRestService);
         this.authService = authService;
+        this.weatherWidget = new WeatherWidget(weatherRestService);
         updateContent();
     }
 

@@ -1,6 +1,8 @@
 package com.crown.clinics.view;
 
+import com.crown.clinics.component.WeatherWidget;
 import com.crown.clinics.service.AuthService;
+import com.crown.clinics.service.WeatherRestService;
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -19,11 +21,14 @@ public abstract class BaseTabbedView extends VerticalLayout {
     protected final Tabs mainTabs;
     protected final VerticalLayout contentArea;
     protected final AuthService authService;
+    private final WeatherWidget weatherWidget;
 
     private final Span userName = new Span("Ładowanie...");
+    private final HorizontalLayout weatherLayout = new HorizontalLayout();
 
-    public BaseTabbedView(String pageTitle, AuthService authService) {
+    public BaseTabbedView(String pageTitle, AuthService authService, WeatherRestService weatherRestService) {
         this.authService = authService;
+        this.weatherWidget = new WeatherWidget(weatherRestService);
 
         setSizeFull();
         setPadding(true);
@@ -36,9 +41,9 @@ public abstract class BaseTabbedView extends VerticalLayout {
                 .set("font-family", "'Courier New', monospace")
                 .set("color", "#3e3e3e");
 
-        // Pasek użytkownika i logout
+        // Pasek użytkownika z logout i pogodą
         Button logoutButton = new Button("Wyloguj", e -> authService.logout(UI.getCurrent()));
-        HorizontalLayout userBar = new HorizontalLayout(userName, logoutButton);
+        HorizontalLayout userBar = new HorizontalLayout(weatherWidget, userName, logoutButton);
         userBar.setSpacing(true);
         userBar.setAlignItems(Alignment.CENTER);
 
