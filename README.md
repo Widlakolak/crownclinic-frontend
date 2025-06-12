@@ -113,7 +113,7 @@ crownclinic-frontend/
 
 ## ✉ Kontakt
 
-Autorzy projektu CrownClinic - Zespół Java Developerów (2025)
+Autor Piotr Więdłocha - piowiedlocha@gmail.com
 
 ---
 
