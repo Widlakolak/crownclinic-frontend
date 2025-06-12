@@ -1,110 +1,114 @@
 package com.crown.clinics.component;
 
-import com.vaadin.flow.component.Text;
+import com.crown.clinics.dto.AppointmentResponseDto;
+import com.crown.clinics.dto.UserResponseDto;
+import com.vaadin.flow.component.ComponentEvent;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import elemental.json.JsonObject;
-import org.springframework.web.reactive.function.client.WebClient;
+import com.vaadin.flow.shared.Registration;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CalendarComponent extends VerticalLayout {
 
-    private final DatePicker datePicker;
-    private final Button prevButton;
-    private final Button nextButton;
-    private final Button dayViewButton;
-    private final Button weekViewButton;
-    private final Button monthViewButton;
-    private final Div calendarView;
-    private final WebClient client = WebClient.create("http://localhost:8080/api");
+    private final DatePicker datePicker = new DatePicker(LocalDate.now());
+    private final Grid<AppointmentResponseDto> appointmentGrid = new Grid<>(AppointmentResponseDto.class);
+    private final ComboBox<UserResponseDto> doctorFilter = new ComboBox<>("Filtruj lekarza");
 
-    private LocalDate currentDate;
-    private String currentView;
+    private List<AppointmentResponseDto> allAppointments;
 
     public CalendarComponent() {
-        setSizeFull();
         addClassName("calendar-component");
 
-        currentDate = LocalDate.now();
-        currentView = "Day";
+        // Toolbar
+        Button prevDay = new Button("←", e -> datePicker.setValue(datePicker.getValue().minusDays(1)));
+        Button nextDay = new Button("→", e -> datePicker.setValue(datePicker.getValue().plusDays(1)));
+        datePicker.addValueChangeListener(e -> fireEvent(new DateChangeEvent(this, e.getValue())));
 
-        // Navigation
-        prevButton = new Button("←", e -> changeDate(currentDate.minusDays(1)));
-        nextButton = new Button("→", e -> changeDate(currentDate.plusDays(1)));
-        datePicker = new DatePicker(currentDate);
-        datePicker.addValueChangeListener(event -> {
-            if (event.getValue() != null) {
-                changeDate(event.getValue());
-            }
-        });
+        HorizontalLayout dateNav = new HorizontalLayout(prevDay, datePicker, nextDay);
+        dateNav.setAlignItems(Alignment.CENTER);
 
-        // View buttons
-        dayViewButton = new Button("Dzień", e -> changeView("Day"));
-        weekViewButton = new Button("Tydzień", e -> changeView("Week"));
-        monthViewButton = new Button("Miesiąc", e -> changeView("Month"));
+        doctorFilter.setItemLabelGenerator(d -> d.firstName() + " " + d.lastName());
+        doctorFilter.setClearButtonVisible(true);
+        doctorFilter.addValueChangeListener(e -> filterGrid()); // Filtrujemy przy zmianie lekarza
 
-        HorizontalLayout navLayout = new HorizontalLayout(prevButton, datePicker, nextButton);
-        HorizontalLayout viewLayout = new HorizontalLayout(dayViewButton, weekViewButton, monthViewButton);
+        HorizontalLayout toolbar = new HorizontalLayout(dateNav, doctorFilter);
+        toolbar.setSpacing(true);
 
-        calendarView = new Div();
-        calendarView.setSizeFull();
-        calendarView.addClassName("calendar-view");
-
-        add(navLayout, viewLayout, calendarView);
-        updateCalendarView();
-        updateActiveViewButton();
+        configureGrid();
+        add(toolbar, appointmentGrid);
     }
 
-    private void changeDate(LocalDate newDate) {
-        this.currentDate = newDate;
-        datePicker.setValue(newDate);
-        updateCalendarView();
+    private void configureGrid() {
+        appointmentGrid.setSizeFull();
+        appointmentGrid.setColumns();
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+        appointmentGrid.addColumn(app -> app.startDateTime().format(timeFormatter)).setHeader("Godzina").setSortable(true);
+        appointmentGrid.addColumn(AppointmentResponseDto::patientFullName).setHeader("Pacjent").setSortable(true);
+        appointmentGrid.addColumn(AppointmentResponseDto::doctorFullName).setHeader("Lekarz").setSortable(true);
+        appointmentGrid.addColumn(AppointmentResponseDto::status).setHeader("Status");
+        appointmentGrid.asSingleSelect().addValueChangeListener(event ->
+                fireEvent(new AppointmentSelectEvent(this, event.getValue())));
     }
 
-    private void changeView(String view) {
-        this.currentView = view;
-        updateCalendarView();
-        updateActiveViewButton();
+    // Metoda do przekazywania danych z zewnątrz
+    public void setAppointments(List<AppointmentResponseDto> appointments) {
+        this.allAppointments = appointments;
+        filterGrid();
     }
 
-    private void updateCalendarView() {
-        calendarView.removeAll();
-        calendarView.add(new Div(new Text("Widok: " + currentView + ", Data: " + currentDate)));
-
-        client.get()
-                .uri("/appointments")
-                .retrieve()
-                .bodyToFlux(JsonObject.class)
-                .collectList()
-                .subscribe(this::renderAppointments, error -> Notification.show("Błąd ładowania wizyt"));
+    // Metoda do przekazywania listy lekarzy do filtra
+    public void setDoctorsForFilter(List<UserResponseDto> doctors) {
+        doctorFilter.setItems(doctors);
     }
 
-    private void updateActiveViewButton() {
-        dayViewButton.removeClassName("active");
-        weekViewButton.removeClassName("active");
-        monthViewButton.removeClassName("active");
+    // Metoda ukrywająca filtr (przydatne w DoctorView)
+    public void setDoctorFilterVisible(boolean visible) {
+        doctorFilter.setVisible(visible);
+    }
 
-        switch (currentView) {
-            case "Day" -> dayViewButton.addClassName("active");
-            case "Week" -> weekViewButton.addClassName("active");
-            case "Month" -> monthViewButton.addClassName("active");
+    private void filterGrid() {
+        if (allAppointments == null) return;
+
+        UserResponseDto selectedDoctor = doctorFilter.getValue();
+        LocalDate selectedDate = datePicker.getValue();
+
+        List<AppointmentResponseDto> filteredAppointments = allAppointments.stream()
+                .filter(app -> app.startDateTime().toLocalDate().equals(selectedDate))
+                .filter(app -> selectedDoctor == null || app.doctorId().equals(selectedDoctor.id()))
+                .collect(Collectors.toList());
+
+        appointmentGrid.setItems(filteredAppointments);
+    }
+
+    // Zdarzenia do komunikacji z widokiem nadrzędnym
+    public static class DateChangeEvent extends ComponentEvent<CalendarComponent> {
+        private final LocalDate date;
+        public DateChangeEvent(CalendarComponent source, LocalDate date) {
+            super(source, false);
+            this.date = date;
         }
+        public LocalDate getDate() { return date; }
     }
 
-    private void renderAppointments(List<JsonObject> appointments) {
-        getUI().ifPresent(ui -> ui.access(() -> {
-            for (JsonObject obj : appointments) {
-                String start = obj.getString("startDateTime");
-                String doctor = obj.getString("doctorFullName");
-                String patient = obj.getString("patientFullName");
-                calendarView.add(new Div(new Text(start + ": " + doctor + " — " + patient)));
-            }
-        }));
+    public static class AppointmentSelectEvent extends ComponentEvent<CalendarComponent> {
+        private final AppointmentResponseDto appointment;
+        public AppointmentSelectEvent(CalendarComponent source, AppointmentResponseDto appointment) {
+            super(source, false);
+            this.appointment = appointment;
+        }
+        public AppointmentResponseDto getAppointment() { return appointment; }
+    }
+
+    public <T extends ComponentEvent<?>> Registration addListener(Class<T> eventType, ComponentEventListener<T> listener) {
+        return getEventBus().addListener(eventType, listener);
     }
 }

@@ -3,9 +3,9 @@ import { injectGlobalWebcomponentCss } from 'Frontend/generated/jar-resources/th
 import { injectGlobalCss } from 'Frontend/generated/jar-resources/theme-util.js';
 
 import { css, unsafeCSS, registerStyles } from '@vaadin/vaadin-themable-mixin';
-import $cssFromFile_0 from 'Frontend/styles/doctor-styles.css?inline';
-import $cssFromFile_1 from 'Frontend/styles/styles.css?inline';
+import $cssFromFile_0 from 'Frontend/styles/styles.css?inline';
 import '@vaadin/polymer-legacy-adapter/style-modules.js';
+import '@vaadin/form-layout/theme/lumo/vaadin-form-layout.js';
 import '@vaadin/vertical-layout/theme/lumo/vaadin-vertical-layout.js';
 import '@vaadin/horizontal-layout/theme/lumo/vaadin-horizontal-layout.js';
 import '@vaadin/field-highlighter/theme/lumo/vaadin-field-highlighter.js';
@@ -36,7 +36,6 @@ import '@vaadin/time-picker/theme/lumo/vaadin-time-picker.js';
 import 'Frontend/generated/jar-resources/vaadin-time-picker/timepickerConnector.js';
 import '@vaadin/dialog/theme/lumo/vaadin-dialog.js';
 import 'Frontend/generated/jar-resources/dndConnector.js';
-import '@vaadin/form-layout/theme/lumo/vaadin-form-layout.js';
 import '@vaadin/form-layout/theme/lumo/vaadin-form-item.js';
 import '@vaadin/grid/theme/lumo/vaadin-grid-column-group.js';
 import '@vaadin/grid/theme/lumo/vaadin-grid.js';
@@ -93,9 +92,6 @@ import '@vaadin/vaadin-lumo-styles/vaadin-iconset.js';
 
 injectGlobalCss($cssFromFile_0.toString(), 'CSSImport end', document);
 injectGlobalWebcomponentCss($cssFromFile_0.toString());
-
-injectGlobalCss($cssFromFile_1.toString(), 'CSSImport end', document);
-injectGlobalWebcomponentCss($cssFromFile_1.toString());
 const loadOnDemand = (key) => { return Promise.resolve(0); }
 window.Vaadin = window.Vaadin || {};
 window.Vaadin.Flow = window.Vaadin.Flow || {};

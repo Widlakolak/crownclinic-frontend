@@ -10,7 +10,9 @@ public record AppointmentResponseDto(
         String status,
         String doctorFullName,
         String doctorEmail,
+        Long doctorId,
         String patientFullName,
         String patientEmail,
+        Long patientId,
         String googleEventId
 ) {}
