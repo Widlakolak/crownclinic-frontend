@@ -181,11 +181,15 @@ public class DoctorView extends BaseTabbedView {
 
             backendService.createPatient(newPatientDto)
                     .flatMap(createdPatient -> {
-                        return backendService.getPatients();
+                        return backendService.getPatients()
+                                .map(allPatients -> new PatientsUpdateResult(allPatients, createdPatient));
                     })
                     .subscribe(
-                            allPatients -> getUI().ifPresent(ui -> ui.access(() -> {
-                                appointmentForm.patient.setItems(allPatients);
+                            result -> getUI().ifPresent(ui -> ui.access(() -> {
+                                appointmentForm.patient.setItems(result.allPatients());
+
+                                appointmentForm.patient.setValue(result.newlyCreatedPatient());
+
                                 Notification.show("Pacjent dodany pomyślnie.");
                                 dialog.close();
                             })),
@@ -224,4 +228,6 @@ public class DoctorView extends BaseTabbedView {
             event.forwardTo("login");
         }
     }
+
+    private record PatientsUpdateResult(List<PatientResponseDto> allPatients, PatientResponseDto newlyCreatedPatient) {}
 }
