@@ -1,7 +1,7 @@
 # Plik: Dockerfile (w repozytorium frontendu)
 
 # Etap 1: Budowanie
-FROM gradle:8.5.0-jdk21 AS build
+FROM gradle:8.8.0-jdk21 AS build
 WORKDIR /home/gradle/src
 COPY build.gradle settings.gradle ./
 RUN gradle build --no-daemon || return 0
