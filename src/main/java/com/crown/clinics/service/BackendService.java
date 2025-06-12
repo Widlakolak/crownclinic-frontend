@@ -1,7 +1,9 @@
 package com.crown.clinics.service;
 
 import com.crown.clinics.dto.*;
+import com.vaadin.flow.server.VaadinSession;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -29,37 +31,46 @@ public class BackendService {
         return builder.build();
     }
 
-    public List<AppointmentResponseDto> getAppointments() {
+    public Mono<List<AppointmentResponseDto>> getAppointments() {
         return getClient().get().uri("/appointments").retrieve()
-                .bodyToFlux(AppointmentResponseDto.class).collectList().block();
+                .bodyToFlux(AppointmentResponseDto.class).collectList();
     }
 
-    public AppointmentResponseDto createAppointment(AppointmentRequestDto dto) {
+    public Mono<AppointmentResponseDto> createAppointment(AppointmentRequestDto dto) {
         return getClient().post().uri("/appointments")
                 .body(Mono.just(dto), AppointmentRequestDto.class).retrieve()
-                .bodyToMono(AppointmentResponseDto.class).block();
+                .bodyToMono(AppointmentResponseDto.class);
     }
 
-    public AppointmentResponseDto updateAppointment(Long id, AppointmentRequestDto dto) {
+    public Mono<AppointmentResponseDto> updateAppointment(Long id, AppointmentRequestDto dto) {
         return getClient().put().uri("/appointments/" + id)
                 .body(Mono.just(dto), AppointmentRequestDto.class).retrieve()
-                .bodyToMono(AppointmentResponseDto.class).block();
+                .bodyToMono(AppointmentResponseDto.class);
     }
 
-    public void deleteAppointment(Long id) {
-        getClient().delete().uri("/appointments/" + id).retrieve()
-                .toBodilessEntity().block();
+    public Mono<Void> deleteAppointment(Long id) {
+        return getClient().delete().uri("/appointments/" + id).retrieve()
+                .toBodilessEntity()
+                .then();
     }
 
-    public List<PatientResponseDto> getPatients() {
+    public Mono<List<PatientResponseDto>> getPatients() {
         return getClient().get().uri("/api/patients").retrieve()
-                .bodyToFlux(PatientResponseDto.class).collectList().block();
+                .bodyToFlux(PatientResponseDto.class).collectList();
     }
 
-    public List<UserResponseDto> getDoctors() {
+    public Mono<PatientResponseDto> createPatient(PatientRequestDto patientDto) {
+        return getClient().post().uri("/api/patients")
+                .body(Mono.just(patientDto), PatientRequestDto.class)
+                .retrieve()
+                .bodyToMono(PatientResponseDto.class);
+    }
+
+    public Mono<List<UserResponseDto>> getDoctors() {
         return getClient().get().uri("/api/users").retrieve()
-                .bodyToFlux(UserResponseDto.class).collectList().block().stream()
-                .filter(user -> "DOCTOR".equalsIgnoreCase(user.role()))
-                .collect(Collectors.toList());
+                .bodyToFlux(UserResponseDto.class).collectList()
+                .map(users -> users.stream()
+                        .filter(user -> "DOCTOR".equalsIgnoreCase(user.role()))
+                        .collect(Collectors.toList()));
     }
 }

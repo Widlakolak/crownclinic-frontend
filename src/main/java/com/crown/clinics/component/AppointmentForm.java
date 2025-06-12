@@ -14,7 +14,10 @@ import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.shared.Registration;
+import lombok.Getter;
 
 import java.util.List;
 
@@ -22,14 +25,14 @@ public class AppointmentForm extends FormLayout {
 
     public final DateTimePicker startDateTime = new DateTimePicker("Początek wizyty");
     public final DateTimePicker endDateTime = new DateTimePicker("Koniec wizyty");
-    public final ComboBox<PatientResponseDto> patient = new ComboBox<>("Pacjent");
-    public final ComboBox<UserResponseDto> doctor = new ComboBox<>("Lekarz");
+    public final ComboBox<PatientResponseDto> patient = new ComboBox<>("Pacjent");    public final ComboBox<UserResponseDto> doctor = new ComboBox<>("Lekarz");
     public final ComboBox<String> status = new ComboBox<>("Status");
     public final TextArea notes = new TextArea("Notatki");
 
     private final Button save = new Button("Zapisz");
     private final Button delete = new Button("Usuń");
     private final Button close = new Button("Anuluj");
+    private final Button addNewPatientButton = new Button(VaadinIcon.PLUS.create());
 
     private AppointmentResponseDto currentAppointment;
 
@@ -37,14 +40,22 @@ public class AppointmentForm extends FormLayout {
         addClassName("appointment-form");
 
         patient.setItems(patients);
-        patient.setItemLabelGenerator(PatientResponseDto::fullName);
+        patient.setItemLabelGenerator(PatientResponseDto::getFullName);
+
+        HorizontalLayout patientLayout = new HorizontalLayout(patient, addNewPatientButton);
+        patientLayout.setAlignItems(Alignment.BASELINE);
+        patient.getStyle().set("flex-grow", "1");
+
+        addNewPatientButton.addClickListener(click -> {
+            fireEvent(new AddNewPatientEvent(this));
+        });
 
         doctor.setItems(doctors);
         doctor.setItemLabelGenerator(d -> d.firstName() + " " + d.lastName());
 
         status.setItems("SCHEDULED", "CANCELLED", "COMPLETED");
 
-        add(startDateTime, endDateTime, patient, doctor, status, notes, createButtonsLayout());
+        add(startDateTime, endDateTime, patientLayout, doctor, status, notes, createButtonsLayout());
     }
 
     private Component createButtonsLayout() {
@@ -62,6 +73,10 @@ public class AppointmentForm extends FormLayout {
         return new HorizontalLayout(save, delete, close);
     }
 
+    public void setPatientItems(List<PatientResponseDto> patients) {
+        patient.setItems(patients);
+    }
+
     public void setAppointment(AppointmentResponseDto appointment) {
         this.currentAppointment = appointment;
         if (appointment != null) {
@@ -71,7 +86,7 @@ public class AppointmentForm extends FormLayout {
             status.setValue(appointment.status());
 
             patient.getListDataView().getItems()
-                    .filter(p -> p.id().equals(appointment.patientId()))
+                    .filter(p -> p.getId().equals(appointment.patientId()))
                     .findFirst().ifPresent(patient::setValue);
 
             doctor.getListDataView().getItems()
@@ -89,6 +104,7 @@ public class AppointmentForm extends FormLayout {
                 !doctor.isEmpty();
     }
 
+    @Getter
     public static abstract class AppointmentFormEvent extends ComponentEvent<AppointmentForm> {
         private final AppointmentResponseDto appointment;
 
@@ -97,27 +113,22 @@ public class AppointmentForm extends FormLayout {
             this.appointment = appointment;
         }
 
-        public AppointmentResponseDto getAppointment() {
-            return appointment;
-        }
+    }
+
+    public static class AddNewPatientEvent extends ComponentEvent<AppointmentForm> {
+        AddNewPatientEvent(AppointmentForm source) { super(source, false); }
     }
 
     public static class SaveEvent extends AppointmentFormEvent {
-        SaveEvent(AppointmentForm source, AppointmentResponseDto a) {
-            super(source, a);
-        }
+        SaveEvent(AppointmentForm source, AppointmentResponseDto a) { super(source, a); }
     }
 
     public static class DeleteEvent extends AppointmentFormEvent {
-        DeleteEvent(AppointmentForm source, AppointmentResponseDto a) {
-            super(source, a);
-        }
+        DeleteEvent(AppointmentForm source, AppointmentResponseDto a) { super(source, a); }
     }
 
     public static class CloseEvent extends AppointmentFormEvent {
-        CloseEvent(AppointmentForm source) {
-            super(source, null);
-        }
+        CloseEvent(AppointmentForm source) { super(source, null); }
     }
 
     public <T extends ComponentEvent<?>> Registration addListener(Class<T> eventType, ComponentEventListener<T> listener) {

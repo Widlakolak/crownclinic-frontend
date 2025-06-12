@@ -11,6 +11,7 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.shared.Registration;
+import lombok.Getter;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 public class CalendarComponent extends VerticalLayout {
 
     private final DatePicker datePicker = new DatePicker(LocalDate.now());
+    @Getter
     private final Grid<AppointmentResponseDto> appointmentGrid = new Grid<>(AppointmentResponseDto.class);
     private final ComboBox<UserResponseDto> doctorFilter = new ComboBox<>("Filtruj lekarza");
 
@@ -31,8 +33,11 @@ public class CalendarComponent extends VerticalLayout {
         // Toolbar
         Button prevDay = new Button("←", e -> datePicker.setValue(datePicker.getValue().minusDays(1)));
         Button nextDay = new Button("→", e -> datePicker.setValue(datePicker.getValue().plusDays(1)));
-        datePicker.addValueChangeListener(e -> fireEvent(new DateChangeEvent(this, e.getValue())));
-
+        datePicker.addValueChangeListener(e -> {
+            if (e.getValue() != null) {
+                filterGrid();
+            }
+        });
         HorizontalLayout dateNav = new HorizontalLayout(prevDay, datePicker, nextDay);
         dateNav.setAlignItems(Alignment.CENTER);
 
