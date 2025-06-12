@@ -16,7 +16,12 @@ public class AuthService {
 
     private static final String TOKEN_KEY = "auth-token";
     private String currentToken;
-    private final WebClient webClient = WebClient.create("http://localhost:8080/api");
+    private final WebClient webClient;
+
+    public AuthService() {
+        String backendBaseUrl = System.getenv().getOrDefault("BACKEND_BASE_URL", "https://crownclinic-backend.onrender.com/api");
+        this.webClient = WebClient.create(backendBaseUrl);
+    }
 
     /**
      * Inicjuje sesję przy wejściu na dowolny widok:
