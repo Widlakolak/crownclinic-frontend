@@ -47,3 +47,7 @@ tasks.named('test') {
 	useJUnitPlatform()
 	enabled = false
 }
+
+springBoot {
+	mainClass = 'com.crown.clinics.ClinicsApplication'
+}
