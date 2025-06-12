@@ -42,6 +42,8 @@ Backend repozytorium - https://github.com/Widlakolak/crownclinic-backend
 Konto google do testowania funkcjonalności:
 Login - crownclinictest@gmail.com
 Hasło - crownclinictest1206
+
+W widoku kalendarza przy dodawaniu wizyty trzeba wypełnić wszystkie pola, po dodaniu pacjenta trzeba kliknąć na puste pole - będzie widoczny ptaszek zaznaczenia i dodanie pacjenta będzie skuteczne.
 ```
 
 ```
