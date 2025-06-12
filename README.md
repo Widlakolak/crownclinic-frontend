@@ -47,8 +47,8 @@ Hasło - crownclinictest1206
 ```
 Zalecane uruchomienie na Render
 
-Frontend: [https://crownclinic-frontend.onrender.com](https://crownclinic-frontend.onrender.com)\
-Backend (Swagger UI): [https://crownclinic-backend.onrender.com/swagger-ui.html](https://crownclinic-backend.onrender.com/swagger-ui.html)
+Frontend: https://crownclinic-frontend.onrender.com
+Backend (Swagger UI): https://crownclinic-backend.onrender.com/swagger-ui.html
 
 > ⚠ Uwaga: Aplikacja może wczytywać się dłużej (nawet 30 sekund) ze względu na darmowy hosting Render (Free Tier), który usypia instancje przy bezczynności.
 ```
