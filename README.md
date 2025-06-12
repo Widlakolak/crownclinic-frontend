@@ -4,6 +4,7 @@
 Frontend aplikacji CrownClinic zbudowany w oparciu o **Vaadin 24+** jako aplikacja **SPA (Single Page Application)** komunikująca się z backendem przez REST API.
 
 Aplikacja umożliwia zarządzanie kliniką, obsługując role: lekarza, recepcjonisty i administratora.
+Backend repozytorium - https://github.com/Widlakolak/crownclinic-backend
 
 ---
 
