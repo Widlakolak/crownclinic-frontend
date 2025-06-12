@@ -1,28 +1,17 @@
-services:
-  - type: web
-    name: crownclinic-backend
-    # Zamiast 'env: java', mówimy mu, żeby użył Dockera
-    env: docker 
-    plan: free
-    # Komendy build i start są teraz w Dockerfile, więc możemy je usunąć stąd
-    # buildCommand: ...  <-- USUŃ LUB ZAKOMENTUJ
-    # startCommand: ...  <-- USUŃ LUB ZAKOMENTUJ
-    dockerfilePath: ./Dockerfile # Ścieżka do naszego pliku
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: crownclinic-db
-          property: connectionString
-      - key: GOOGLE_CLIENT_ID
-        sync: false
-      - key: GOOGLE_CLIENT_SECRET
-        sync: false
-      - key: JWT_SECRET
-        sync: false
-      - key: MAIL_USERNAME
-        sync: false
-      - key: MAIL_PASSWORD
-        sync: false
-      # Dodajemy port, aby Spring Boot wiedział, na czym działać wewnątrz kontenera
-      - key: PORT
-        value: 8080
+# Plik: Dockerfile (w repozytorium frontendu)
+
+# Etap 1: Budowanie
+FROM gradle:8.5.0-jdk21 AS build
+WORKDIR /home/gradle/src
+COPY build.gradle settings.gradle ./
+RUN gradle build --no-daemon || return 0
+COPY . .
+RUN gradle build --no-daemon -x test
+
+# Etap 2: Uruchamianie
+FROM eclipse-temurin:21-jre-jammy
+WORKDIR /app
+# UWAGA: Upewnij się, że nazwa pliku .jar jest poprawna!
+COPY --from=build /home/gradle/src/build/libs/clinics-0.0.1-SNAPSHOT.jar app.jar
+EXPOSE 8081
+ENTRYPOINT ["java", "-jar", "app.jar"]
