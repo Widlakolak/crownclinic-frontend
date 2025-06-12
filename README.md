@@ -1,7 +1,6 @@
 ## CrownClinic Frontend
 
 
-
 Frontend aplikacji CrownClinic zbudowany w oparciu o **Vaadin 24+** jako aplikacja **SPA (Single Page Application)** komunikująca się z backendem przez REST API.
 
 Aplikacja umożliwia zarządzanie kliniką, obsługując role: lekarza, recepcjonisty i administratora.
@@ -38,12 +37,14 @@ Aplikacja umożliwia zarządzanie kliniką, obsługując role: lekarza, recepcjo
 
 ## 🏃‍♂️ Jak uruchomić
 
-```Konto google do testowania funkcjonalności:
+```
+Konto google do testowania funkcjonalności:
 Login - crownclinictest@gmail.com
 Hasło - crownclinictest1206
 ```
 
-```Zalecane uruchomienie na Render
+```
+Zalecane uruchomienie na Render
 
 Frontend: [https://crownclinic-frontend.onrender.com](https://crownclinic-frontend.onrender.com)\
 Backend (Swagger UI): [https://crownclinic-backend.onrender.com/swagger-ui.html](https://crownclinic-backend.onrender.com/swagger-ui.html)
