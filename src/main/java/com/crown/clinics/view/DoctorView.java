@@ -30,7 +30,6 @@ public class DoctorView extends BaseTabbedView {
 
     private CalendarComponent calendarComponent;
     private AppointmentForm appointmentForm;
-
     private final BackendService backendService;
 
     public DoctorView(AuthService authService, WeatherRestService weatherRestService, BackendService backendService) {
@@ -50,7 +49,6 @@ public class DoctorView extends BaseTabbedView {
     protected void updateContent() {
         contentArea.removeAll();
         String selectedTab = mainTabs.getSelectedTab().getLabel();
-
         if ("Kalendarz".equals(selectedTab)) {
             setupCalendarLayout();
         } else {
@@ -72,11 +70,15 @@ public class DoctorView extends BaseTabbedView {
         mainLayout.setFlexGrow(1, appointmentForm);
 
         Button addAppointmentButton = new Button("Dodaj wizytę", click -> addAppointment());
-
         contentArea.add(addAppointmentButton, mainLayout);
+
         setupListeners();
 
-        Mono.when(refreshCalendar(), loadFormSelects()).subscribe();
+        // Asynchronicznie ładujemy wszystkie potrzebne dane na start
+        Mono.when(refreshCalendar(), loadFormSelects()).subscribe(
+                null,
+                error -> showError("Błąd inicjalizacji widoku: " + error.getMessage())
+        );
     }
 
     private void setupListeners() {
@@ -89,45 +91,43 @@ public class DoctorView extends BaseTabbedView {
 
     private Mono<Void> refreshCalendar() {
         return backendService.getAppointments()
-                .doOnSuccess(appointments ->
-                        getUI().ifPresent(ui -> ui.access(() ->
-                                calendarComponent.setAppointments(appointments)
-                        ))
-                )
+                .doOnSuccess(appointments -> getUI().ifPresent(ui -> ui.access(() ->
+                        calendarComponent.setAppointments(appointments))))
                 .then();
     }
 
     private Mono<Void> loadFormSelects() {
         Mono<Void> loadPatients = backendService.getPatients()
-                .doOnSuccess(patients ->
-                        getUI().ifPresent(ui -> ui.access(() ->
-                                appointmentForm.patient.setItems(patients)
-                        ))
-                ).then();
-
+                .doOnSuccess(patients -> getUI().ifPresent(ui -> ui.access(() ->
+                        appointmentForm.patient.setItems(patients))))
+                .then();
         Mono<Void> loadDoctors = backendService.getDoctors()
-                .doOnSuccess(doctors ->
-                        getUI().ifPresent(ui -> ui.access(() ->
-                                appointmentForm.doctor.setItems(doctors)
-                        ))
-                ).then();
-
+                .doOnSuccess(doctors -> getUI().ifPresent(ui -> ui.access(() ->
+                        appointmentForm.doctor.setItems(doctors))))
+                .then();
         return Mono.when(loadPatients, loadDoctors);
     }
 
     private void handleSaveEvent(AppointmentForm.SaveEvent event) {
         if (!appointmentForm.isFormValid()) {
-            Notification.show("Proszę wypełnić wszystkie wymagane pola.");
+            showError("Proszę wypełnić wszystkie wymagane pola.");
             return;
         }
 
+        ZonedDateTime start = ZonedDateTime.of(appointmentForm.startDateTime.getValue(), ZoneId.systemDefault());
+        ZonedDateTime end = ZonedDateTime.of(appointmentForm.endDateTime.getValue(), ZoneId.systemDefault());
+        String notes = appointmentForm.notes.getValue();
+        Long patientId = appointmentForm.patient.getValue().getId();
+        Long doctorId = appointmentForm.doctor.getValue().id();
+        String status = appointmentForm.status.getValue();
+
         AppointmentRequestDto requestDto = new AppointmentRequestDto(
-                ZonedDateTime.of(appointmentForm.startDateTime.getValue(), ZoneId.systemDefault()),
-                ZonedDateTime.of(appointmentForm.endDateTime.getValue(), ZoneId.systemDefault()),
-                appointmentForm.notes.getValue(),
-                appointmentForm.patient.getValue().getId(),
-                appointmentForm.doctor.getValue().id(),
-                appointmentForm.status.getValue()
+                start,
+                end,
+                notes,
+                patientId,
+                doctorId,
+                status
         );
 
         Mono<AppointmentResponseDto> saveOperation;
@@ -137,29 +137,21 @@ public class DoctorView extends BaseTabbedView {
             saveOperation = backendService.updateAppointment(event.getAppointment().id(), requestDto);
         }
 
-        saveOperation
-                .then(refreshCalendar())
-                .subscribe(
-                        null,
-                        error -> getUI().ifPresent(ui -> ui.access(() ->
-                                Notification.show("Błąd zapisu: " + error.getMessage())
-                        )),
-                        () -> getUI().ifPresent(ui -> ui.access(() -> {
-                            Notification.show("Wizyta zapisana.");
-                            closeEditor();
-                        }))
-                );
+        saveOperation.then(refreshCalendar()).subscribe(
+                v -> {},
+                err -> showError("Błąd zapisu wizyty: " + err.getMessage()),
+                () -> getUI().ifPresent(ui -> ui.access(() -> {
+                    Notification.show("Wizyta zapisana.");
+                    closeEditor();
+                }))
+        );
     }
 
     private void handleDeleteEvent(AppointmentForm.DeleteEvent event) {
         if (event.getAppointment() == null || event.getAppointment().id() == null) return;
-
         backendService.deleteAppointment(event.getAppointment().id())
                 .then(refreshCalendar())
-                .subscribe(
-                        null,
-                        error -> getUI().ifPresent(ui -> ui.access(() ->
-                                Notification.show("Błąd usuwania: " + error.getMessage()))),
+                .subscribe(v -> {}, err -> showError("Błąd usuwania: " + err.getMessage()),
                         () -> getUI().ifPresent(ui -> ui.access(() -> {
                             Notification.show("Wizyta usunięta.");
                             closeEditor();
@@ -170,26 +162,24 @@ public class DoctorView extends BaseTabbedView {
     private void openNewPatientDialog() {
         Dialog dialog = new Dialog();
         PatientForm newPatientForm = new PatientForm();
+
         newPatientForm.setPatient(new PatientResponseDto());
 
         newPatientForm.addListener(PatientForm.SaveEvent.class, event -> {
             PatientResponseDto formData = event.getPatient();
+
             PatientRequestDto newPatientDto = new PatientRequestDto(
-                    formData.getFirstName(), formData.getLastName(),
-                    formData.getEmail(), formData.getPhone(), formData.getDateOfBirth()
+                    formData.getFirstName(),
+                    formData.getLastName(),
+                    formData.getEmail(),
+                    formData.getPhone(),
+                    formData.getDateOfBirth()
             );
 
             backendService.createPatient(newPatientDto)
-                    .flatMap(createdPatient -> {
-                        return backendService.getPatients()
-                                .map(allPatients -> new PatientsUpdateResult(allPatients, createdPatient));
-                    })
+                    .flatMap(createdPatient -> loadFormSelects())
                     .subscribe(
                             result -> getUI().ifPresent(ui -> ui.access(() -> {
-                                appointmentForm.patient.setItems(result.allPatients());
-
-                                appointmentForm.patient.setValue(result.newlyCreatedPatient());
-
                                 Notification.show("Pacjent dodany pomyślnie.");
                                 dialog.close();
                             })),
@@ -204,7 +194,6 @@ public class DoctorView extends BaseTabbedView {
     }
 
     private void addAppointment() {
-        calendarComponent.getAppointmentGrid().asSingleSelect().clear();
         editAppointment(new AppointmentResponseDto(null, null, null, "", "SCHEDULED", null, null, null, null, null, null, null));
     }
 
@@ -222,12 +211,14 @@ public class DoctorView extends BaseTabbedView {
         appointmentForm.setVisible(false);
     }
 
+    private void showError(String message) {
+        getUI().ifPresent(ui -> ui.access(() -> Notification.show(message, 3000, Notification.Position.MIDDLE)));
+    }
+
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
         if (authService.getToken() == null) {
             event.forwardTo("login");
         }
     }
-
-    private record PatientsUpdateResult(List<PatientResponseDto> allPatients, PatientResponseDto newlyCreatedPatient) {}
 }
