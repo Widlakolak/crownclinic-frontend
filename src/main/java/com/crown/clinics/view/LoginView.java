@@ -35,10 +35,11 @@ public class LoginView extends VerticalLayout {
         );
 
         // Przycisk do logowania przez Google
+        String backendBaseUrl = System.getenv().getOrDefault("BACKEND_BASE_URL", "http://localhost:8080");
         Button googleButton = new Button("Zaloguj przez Google", e ->
                 UI.getCurrent()
                         .getPage()
-                        .setLocation("http://localhost:8080/oauth2/authorization/google")
+                        .setLocation(backendBaseUrl + "/oauth2/authorization/google")
         );
 
         // Layout
