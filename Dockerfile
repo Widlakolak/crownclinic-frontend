@@ -14,4 +14,4 @@ WORKDIR /app
 # UWAGA: Upewnij się, że nazwa pliku .jar jest poprawna!
 COPY --from=build /home/gradle/src/build/libs/clinics-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 8081
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Dvaadin.productionMode=true", "-jar", "app.jar"]
