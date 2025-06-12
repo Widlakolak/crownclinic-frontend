@@ -48,6 +48,11 @@ tasks.named('test') {
 	enabled = false
 }
 
+vaadin {
+	productionMode = project.hasProperty('vaadin.productionMode') ?
+			project.property('vaadin.productionMode').toBoolean() : false
+}
+
 springBoot {
 	mainClass = 'com.crown.clinics.ClinicsApplication'
 }
